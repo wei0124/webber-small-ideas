@@ -24,8 +24,8 @@ The first tool. Done means:
 - [x] Fuzzy "did you mean?" suggestions on typos
 - [x] Drop-in Markdown cheatsheet format (no registration needed)
 - [x] Test suite (runs with or without pytest)
-- [ ] **Stretch:** clipboard copy (`cheat -c <command>`) and a community
-      cheatsheet sync command
+- [x] **Stretch:** clipboard copy (`cheat -c <command>`)
+- [ ] **Stretch:** community cheatsheet sync command
 
 ## Milestone 2 — Personal dashboard / start page ⬜
 

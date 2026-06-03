@@ -27,7 +27,12 @@ python3 cheat.py tar              # show the tar cheatsheet
 python3 cheat.py git-rebase       # show the git rebase cheatsheet
 python3 cheat.py --list           # list every available cheatsheet
 python3 cheat.py --search tunnel  # find cheatsheets mentioning "tunnel"
+python3 cheat.py -c tar           # copy tar commands to the clipboard
 ```
+
+### Clipboard copy
+
+Run `cheat -c <command>` to extract the command lines from a cheatsheet's code blocks and copy them to the system clipboard. Works on macOS (pbcopy), Linux Wayland (wl-copy), Linux X11 (xclip/xsel), and Windows (clip). Falls back to printing the commands to stdout if no clipboard tool is available.
 
 Mistype a name and it suggests the closest match:
 
@@ -63,7 +68,7 @@ cheat tar
 ## Development
 
 ```
-python3 -m pytest          # run the test suite (7 tests)
+python3 -m pytest          # run the test suite (16 tests)
 python3 tests/test_cheat.py # or run without pytest installed
 ```
 

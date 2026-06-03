@@ -56,16 +56,101 @@ def test_main_unknown_command_returns_one(capsys):
     assert "No cheatsheet" in captured.err
 
 
+def test_extract_commands_fenced_blocks():
+    md = "# heading\n\nsome prose\n\n```\nfoo --bar\nbaz --qux\n```\n\nmore text\n"
+    assert cheat.extract_commands(md) == ["foo --bar", "baz --qux"]
+
+
+def test_extract_commands_multiple_blocks():
+    md = "```\na\n```\n\n```\nb\nc\n```\n"
+    assert cheat.extract_commands(md) == ["a", "b", "c"]
+
+
+def test_extract_commands_ignores_prose_and_headings():
+    md = "# title\n\nparagraph\n\n> blockquote\n"
+    assert cheat.extract_commands(md) == []
+
+
+def test_extract_commands_preserves_leading_whitespace():
+    md = "```\n  indented cmd\n```\n"
+    assert cheat.extract_commands(md) == ["  indented cmd"]
+
+
+def test_copy_to_clipboard_returns_none_when_no_tool(monkeypatch):
+    monkeypatch.setattr(cheat.shutil, "which", lambda _: None)
+    assert cheat.copy_to_clipboard("hello") is None
+
+
+def test_copy_to_clipboard_uses_first_available_tool(monkeypatch):
+    calls: list[tuple[list[str], bytes]] = []
+
+    def fake_which(tool):
+        return "/usr/bin/" + tool if tool == "wl-copy" else None
+
+    def fake_run(cmd, input=None, check=False):
+        calls.append((cmd, input))
+
+    monkeypatch.setattr(cheat.shutil, "which", fake_which)
+    monkeypatch.setattr(cheat.subprocess, "run", fake_run)
+
+    result = cheat.copy_to_clipboard("some text")
+    assert result == "wl-copy"
+    assert len(calls) == 1
+    assert calls[0][0] == ["wl-copy"]
+    assert calls[0][1] == b"some text"
+
+
+def test_main_copy_flag_success(monkeypatch, capsys):
+    monkeypatch.setattr(cheat, "copy_to_clipboard", lambda text: "pbcopy")
+    rc = cheat.main(["-c", "tar"])
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert "Copied" in captured.err
+    assert "tar" in captured.err
+    assert captured.out == ""
+
+
+def test_main_copy_flag_unknown_command(capsys):
+    rc = cheat.main(["-c", "definitely-not-a-command"])
+    captured = capsys.readouterr()
+    assert rc == 1
+    assert "No cheatsheet" in captured.err
+
+
+def test_main_copy_flag_no_clipboard_tool(monkeypatch, capsys):
+    monkeypatch.setattr(cheat, "copy_to_clipboard", lambda text: None)
+    rc = cheat.main(["--copy", "tar"])
+    captured = capsys.readouterr()
+    assert rc == 1
+    assert "No clipboard tool" in captured.err
+    assert "tar" in captured.out
+
+
 if __name__ == "__main__":
     # Allow running without pytest installed: minimal manual runner.
     import traceback
+
+    class _Monkeypatch:
+        """Minimal monkeypatch shim: only supports setattr."""
+        def __init__(self):
+            self._saved: list[tuple[object, str, object]] = []
+
+        def setattr(self, target, name, value):
+            self._saved.append((target, name, getattr(target, name)))
+            setattr(target, name, value)
+
+        def undo(self):
+            for target, name, old in reversed(self._saved):
+                setattr(target, name, old)
+            self._saved.clear()
 
     funcs = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     failed = 0
     for fn in funcs:
         try:
-            # crude capsys shim for the two tests that need it
-            if "capsys" in fn.__code__.co_varnames:
+            params = fn.__code__.co_varnames
+            kwargs = {}
+            if "capsys" in params:
                 class _Cap:
                     def readouterr(self):
                         import io
@@ -75,12 +160,17 @@ if __name__ == "__main__":
                 _buf_out, _buf_err = io.StringIO(), io.StringIO()
                 old_out, old_err = sys.stdout, sys.stderr
                 sys.stdout, sys.stderr = _buf_out, _buf_err
-                try:
-                    fn(_Cap())
-                finally:
+                kwargs["capsys"] = _Cap()
+            if "monkeypatch" in params:
+                mp = _Monkeypatch()
+                kwargs["monkeypatch"] = mp
+            try:
+                fn(**kwargs)
+            finally:
+                if "capsys" in params:
                     sys.stdout, sys.stderr = old_out, old_err
-            else:
-                fn()
+                if "monkeypatch" in params:
+                    mp.undo()
             print(f"PASS {fn.__name__}")
         except Exception:  # noqa: BLE001
             failed += 1
