@@ -29,6 +29,7 @@ python3 cheat.py --list           # list every available cheatsheet
 python3 cheat.py --search tunnel  # find cheatsheets mentioning "tunnel"
 python3 cheat.py -c tar           # copy tar commands to the clipboard
 python3 cheat.py --completion bash  # print bash completion script
+python3 cheat.py --sync           # pull latest community cheatsheets
 ```
 
 ### Clipboard copy
@@ -78,12 +79,28 @@ eval "$(cheat --completion zsh)"
 
 The completion list stays in sync automatically as you add or remove cheatsheets.
 
+### Syncing community cheatsheets
+
+Pull the latest cheatsheets from the project's GitHub repo into your local `cheatsheets/` folder:
+
+```
+cheat --sync
+```
+
+Files that are new are added; files that have changed upstream are updated; identical files are left alone. A summary is printed at the end.
+
+You can point `--sync` at any GitHub contents-API URL to pull from a fork or a different repo:
+
+```
+cheat --sync https://api.github.com/repos/you/your-fork/contents/cheatsheets
+```
+
 ---
 
 ## Development
 
 ```
-python3 -m pytest          # run the test suite (20 tests)
+python3 -m pytest          # run the test suite (24 tests)
 python3 tests/test_cheat.py # or run without pytest installed
 ```
 
