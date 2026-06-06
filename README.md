@@ -28,6 +28,7 @@ python3 cheat.py git-rebase       # show the git rebase cheatsheet
 python3 cheat.py --list           # list every available cheatsheet
 python3 cheat.py --search tunnel  # find cheatsheets mentioning "tunnel"
 python3 cheat.py -c tar           # copy tar commands to the clipboard
+python3 cheat.py --completion bash  # print bash completion script
 ```
 
 ### Clipboard copy
@@ -63,12 +64,26 @@ ln -s "$(pwd)/cheat.py" ~/.local/bin/cheat   # ensure ~/.local/bin is on PATH
 cheat tar
 ```
 
+### Shell completion
+
+Get tab-completion for cheatsheet names:
+
+```bash
+# bash — append to ~/.bashrc (or source it separately)
+cheat --completion bash >> ~/.bashrc
+
+# zsh — add to ~/.zshrc or eval in your shell
+eval "$(cheat --completion zsh)"
+```
+
+The completion list stays in sync automatically as you add or remove cheatsheets.
+
 ---
 
 ## Development
 
 ```
-python3 -m pytest          # run the test suite (16 tests)
+python3 -m pytest          # run the test suite (20 tests)
 python3 tests/test_cheat.py # or run without pytest installed
 ```
 

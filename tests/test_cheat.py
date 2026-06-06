@@ -126,6 +126,33 @@ def test_main_copy_flag_no_clipboard_tool(monkeypatch, capsys):
     assert "tar" in captured.out
 
 
+def test_completion_script_bash_contains_compgen_and_cheat():
+    script = cheat.completion_script("bash")
+    assert "compgen" in script
+    assert "cheat" in script
+
+
+def test_completion_script_zsh_contains_compadd():
+    script = cheat.completion_script("zsh")
+    assert "compadd" in script
+
+
+def test_completion_script_fish_raises_valueerror():
+    try:
+        cheat.completion_script("fish")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("expected ValueError for unsupported shell 'fish'")
+
+
+def test_main_completion_bash_returns_zero(capsys):
+    rc = cheat.main(["--completion", "bash"])
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert "complete" in captured.out
+
+
 if __name__ == "__main__":
     # Allow running without pytest installed: minimal manual runner.
     import traceback

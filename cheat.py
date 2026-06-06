@@ -6,6 +6,7 @@ Usage:
     cheat -c <command>     Copy command lines from a cheatsheet to the clipboard.
     cheat --list           List every available cheatsheet.
     cheat --search <term>  Find cheatsheets whose name or body mentions <term>.
+    cheat --completion bash  Print a bash completion script (also: zsh).
 
 Cheatsheets are plain Markdown files in the `cheatsheets/` folder next to this
 script, so adding your own is just dropping in a new `.md` file.
@@ -141,6 +142,30 @@ def _raw_markdown(name: str) -> str:
         return fh.read()
 
 
+def completion_script(shell: str) -> str:
+    """Return a shell completion script for `shell` (bash or zsh).
+
+    Raises ValueError for unsupported shells.
+    """
+    if shell == "bash":
+        return (
+            "_cheat_completions() {\n"
+            "    local cur\n"
+            '    cur="${COMP_WORDS[COMP_CWORD]}"\n'
+            '    COMPREPLY=( $(compgen -W "$(cheat --list 2>/dev/null)" -- "$cur") )\n'
+            "}\n"
+            "complete -F _cheat_completions cheat\n"
+        )
+    if shell == "zsh":
+        return (
+            "_cheat_completions() {\n"
+            "    compadd $(cheat --list 2>/dev/null)\n"
+            "}\n"
+            "compdef _cheat_completions cheat\n"
+        )
+    raise ValueError(f"Unsupported shell: {shell!r} (expected 'bash' or 'zsh')")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="cheat",
@@ -151,7 +176,13 @@ def main(argv: list[str] | None = None) -> int:
                         help="copy command lines to clipboard instead of displaying")
     parser.add_argument("--list", action="store_true", help="list all cheatsheets")
     parser.add_argument("--search", metavar="TERM", help="search cheatsheets")
+    parser.add_argument("--completion", choices=["bash", "zsh"],
+                        help="print a shell completion script (bash or zsh)")
     args = parser.parse_args(argv)
+
+    if args.completion:
+        print(completion_script(args.completion), end="")
+        return 0
 
     if args.list:
         names = available()
