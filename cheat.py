@@ -7,6 +7,7 @@ Usage:
     cheat --list           List every available cheatsheet.
     cheat --search <term>  Find cheatsheets whose name or body mentions <term>.
     cheat --completion bash  Print a bash completion script (also: zsh).
+    cheat --sync [URL]     Pull the latest community cheatsheets from GitHub.
 
 Cheatsheets are plain Markdown files in the `cheatsheets/` folder next to this
 script, so adding your own is just dropping in a new `.md` file.
@@ -14,13 +15,19 @@ script, so adding your own is just dropping in a new `.md` file.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shutil
 import subprocess
 import sys
+import urllib.request
 from difflib import get_close_matches
 
 CHEAT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cheatsheets")
+
+DEFAULT_SYNC_URL = (
+    "https://api.github.com/repos/wei0124/webber-small-ideas/contents/cheatsheets"
+)
 
 # ANSI colors, disabled automatically when output is not a TTY.
 _COLOR = sys.stdout.isatty() and os.environ.get("NO_COLOR") is None
@@ -166,6 +173,97 @@ def completion_script(shell: str) -> str:
     raise ValueError(f"Unsupported shell: {shell!r} (expected 'bash' or 'zsh')")
 
 
+def _fetch(url: str) -> bytes:
+    """Fetch `url` and return its content as bytes.
+
+    Uses a User-Agent header (required by the GitHub API) and a 15-second
+    timeout.  Raises on any network or HTTP error.
+    """
+    req = urllib.request.Request(url, headers={"User-Agent": "cheat-cli/1.0"})
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        return resp.read()
+
+
+def sync(
+    api_url: str = DEFAULT_SYNC_URL,
+    dest_dir: str = CHEAT_DIR,
+    *,
+    fetch: "callable[[str], bytes] | None" = None,
+) -> dict:
+    """Pull community cheatsheets from a GitHub contents-API listing.
+
+    `api_url` must return a JSON array of file objects (keys: ``name``,
+    ``type``, ``download_url``).  Only entries where ``type == "file"`` and
+    ``name`` ends with ``".md"`` are processed.
+
+    `dest_dir` is created if it does not exist.  Each remote file is compared
+    against the local copy (byte-for-byte); files are written only when they
+    are new or have changed.
+
+    `fetch` is an injectable ``fetch(url) -> bytes`` callable so tests can
+    run fully offline.  When *None* (the default), the module-level
+    ``_fetch`` is used (looked up at call time so it can be monkeypatched).
+
+    Returns ``{"added": [...], "updated": [...], "unchanged": [...]}``
+    (sorted name lists).
+
+    Raises ``RuntimeError`` with a human-readable message on any network or
+    JSON error.
+    """
+    if fetch is None:
+        fetch = _fetch
+    try:
+        listing = json.loads(fetch(api_url))
+    except Exception as exc:
+        raise RuntimeError(
+            f"Failed to fetch cheatsheet listing from {api_url}: {exc}"
+        ) from exc
+
+    os.makedirs(dest_dir, exist_ok=True)
+
+    added: list[str] = []
+    updated: list[str] = []
+    unchanged: list[str] = []
+
+    for entry in listing:
+        if entry.get("type") != "file":
+            continue
+        name: str = entry.get("name", "")
+        if not name.endswith(".md"):
+            continue
+        download_url: str = entry.get("download_url", "")
+        if not download_url:
+            continue
+
+        try:
+            remote_bytes = fetch(download_url)
+        except Exception as exc:
+            raise RuntimeError(
+                f"Failed to download {name} from {download_url}: {exc}"
+            ) from exc
+
+        local_path = os.path.join(dest_dir, name)
+        if not os.path.exists(local_path):
+            with open(local_path, "wb") as fh:
+                fh.write(remote_bytes)
+            added.append(name)
+        else:
+            with open(local_path, "rb") as fh:
+                local_bytes = fh.read()
+            if local_bytes != remote_bytes:
+                with open(local_path, "wb") as fh:
+                    fh.write(remote_bytes)
+                updated.append(name)
+            else:
+                unchanged.append(name)
+
+    return {
+        "added": sorted(added),
+        "updated": sorted(updated),
+        "unchanged": sorted(unchanged),
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="cheat",
@@ -178,10 +276,28 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--search", metavar="TERM", help="search cheatsheets")
     parser.add_argument("--completion", choices=["bash", "zsh"],
                         help="print a shell completion script (bash or zsh)")
+    parser.add_argument("--sync", nargs="?", const=DEFAULT_SYNC_URL, metavar="URL",
+                        help="sync community cheatsheets from a GitHub repo")
     args = parser.parse_args(argv)
 
     if args.completion:
         print(completion_script(args.completion), end="")
+        return 0
+
+    if args.sync is not None:
+        try:
+            result = sync(api_url=args.sync, dest_dir=CHEAT_DIR)
+        except RuntimeError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        n_added = len(result["added"])
+        n_updated = len(result["updated"])
+        n_unchanged = len(result["unchanged"])
+        print(f"Sync complete: {n_added} added, {n_updated} updated, {n_unchanged} unchanged.")
+        for name in result["added"]:
+            print(f"  + {name}")
+        for name in result["updated"]:
+            print(f"  ~ {name}")
         return 0
 
     if args.list:

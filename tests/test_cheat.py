@@ -153,8 +153,118 @@ def test_main_completion_bash_returns_zero(capsys):
     assert "complete" in captured.out
 
 
+def _make_fake_fetch(listing, files):
+    """Return a fake ``fetch(url) -> bytes`` for sync tests.
+
+    `listing` is the JSON-serialisable list returned for the API URL.
+    `files` maps download_url strings to the bytes they should return.
+    """
+    import json as _json
+
+    def fake_fetch(url):
+        if "contents/cheatsheets" in url:
+            return _json.dumps(listing).encode()
+        return files.get(url, b"")
+
+    return fake_fetch
+
+
+def _sample_listing():
+    """Canned GitHub contents-API listing for two cheatsheets."""
+    return [
+        {
+            "name": "fake-cmd.md",
+            "type": "file",
+            "download_url": "https://raw.example.com/fake-cmd.md",
+        },
+        {
+            "name": "another-cmd.md",
+            "type": "file",
+            "download_url": "https://raw.example.com/another-cmd.md",
+        },
+    ]
+
+
+def _sample_files():
+    """Canned remote file content matching the listing above."""
+    return {
+        "https://raw.example.com/fake-cmd.md": b"# fake-cmd\n\n```\nfake --flag\n```\n",
+        "https://raw.example.com/another-cmd.md": b"# another-cmd\n\n```\nanother --x\n```\n",
+    }
+
+
+def test_sync_empty_dir_reports_all_added(tmp_path):
+    listing = _sample_listing()
+    files = _sample_files()
+    fetch = _make_fake_fetch(listing, files)
+
+    result = cheat.sync(
+        api_url="https://api.github.com/repos/x/y/contents/cheatsheets",
+        dest_dir=str(tmp_path),
+        fetch=fetch,
+    )
+
+    assert result["added"] == ["another-cmd.md", "fake-cmd.md"]
+    assert result["updated"] == []
+    assert result["unchanged"] == []
+    assert (tmp_path / "fake-cmd.md").read_bytes() == files["https://raw.example.com/fake-cmd.md"]
+    assert (tmp_path / "another-cmd.md").read_bytes() == files["https://raw.example.com/another-cmd.md"]
+
+
+def test_sync_identical_content_reports_unchanged(tmp_path):
+    listing = _sample_listing()
+    files = _sample_files()
+    fetch = _make_fake_fetch(listing, files)
+    api = "https://api.github.com/repos/x/y/contents/cheatsheets"
+
+    cheat.sync(api_url=api, dest_dir=str(tmp_path), fetch=fetch)
+
+    result = cheat.sync(api_url=api, dest_dir=str(tmp_path), fetch=fetch)
+    assert result["added"] == []
+    assert result["updated"] == []
+    assert result["unchanged"] == ["another-cmd.md", "fake-cmd.md"]
+
+
+def test_sync_changed_content_reports_updated(tmp_path):
+    listing = _sample_listing()
+    files = _sample_files()
+    fetch = _make_fake_fetch(listing, files)
+    api = "https://api.github.com/repos/x/y/contents/cheatsheets"
+
+    cheat.sync(api_url=api, dest_dir=str(tmp_path), fetch=fetch)
+
+    (tmp_path / "fake-cmd.md").write_bytes(b"# old content\n")
+
+    updated_files = dict(files)
+    updated_files["https://raw.example.com/fake-cmd.md"] = b"# new content\n"
+    fetch2 = _make_fake_fetch(listing, updated_files)
+
+    result = cheat.sync(api_url=api, dest_dir=str(tmp_path), fetch=fetch2)
+    assert result["added"] == []
+    assert result["updated"] == ["fake-cmd.md"]
+    assert result["unchanged"] == ["another-cmd.md"]
+    assert (tmp_path / "fake-cmd.md").read_bytes() == b"# new content\n"
+
+
+def test_main_sync_end_to_end(monkeypatch, tmp_path, capsys):
+    listing = _sample_listing()
+    files = _sample_files()
+    fetch = _make_fake_fetch(listing, files)
+    monkeypatch.setattr(cheat, "_fetch", fetch)
+    monkeypatch.setattr(cheat, "CHEAT_DIR", str(tmp_path))
+    monkeypatch.setattr(cheat, "DEFAULT_SYNC_URL",
+                        "https://api.github.com/repos/x/y/contents/cheatsheets")
+
+    rc = cheat.main(["--sync"])
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert "Sync complete" in captured.out
+    assert "2 added" in captured.out
+
+
 if __name__ == "__main__":
     # Allow running without pytest installed: minimal manual runner.
+    import shutil
     import traceback
 
     class _Monkeypatch:
@@ -177,6 +287,12 @@ if __name__ == "__main__":
         try:
             params = fn.__code__.co_varnames
             kwargs = {}
+            _tmp_dir = None
+            if "tmp_path" in params:
+                import pathlib
+                import tempfile
+                _tmp_dir = tempfile.mkdtemp()
+                kwargs["tmp_path"] = pathlib.Path(_tmp_dir)
             if "capsys" in params:
                 class _Cap:
                     def readouterr(self):
@@ -198,6 +314,8 @@ if __name__ == "__main__":
                     sys.stdout, sys.stderr = old_out, old_err
                 if "monkeypatch" in params:
                     mp.undo()
+                if _tmp_dir is not None:
+                    shutil.rmtree(_tmp_dir, ignore_errors=True)
             print(f"PASS {fn.__name__}")
         except Exception:  # noqa: BLE001
             failed += 1
