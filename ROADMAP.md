@@ -15,7 +15,7 @@ the delivery order and the definition of "done" for each.
 
 ---
 
-## Milestone 1 — `cheat`: offline command cheatsheets ✅
+## Milestone 1 — `cheat`: offline command cheatsheets ✅ (complete — all stretch goals shipped)
 
 The first tool. Done means:
 
@@ -26,7 +26,7 @@ The first tool. Done means:
 - [x] Test suite (runs with or without pytest)
 - [x] **Stretch:** clipboard copy (`cheat -c <command>`)
 - [x] **Stretch:** shell completion (`cheat --completion bash|zsh`)
-- [ ] **Stretch:** community cheatsheet sync command
+- [x] **Stretch:** community cheatsheet sync command (`cheat --sync`)
 
 ## Milestone 2 — Personal dashboard / start page ⬜
 
