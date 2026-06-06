@@ -25,6 +25,7 @@ The first tool. Done means:
 - [x] Drop-in Markdown cheatsheet format (no registration needed)
 - [x] Test suite (runs with or without pytest)
 - [x] **Stretch:** clipboard copy (`cheat -c <command>`)
+- [x] **Stretch:** shell completion (`cheat --completion bash|zsh`)
 - [ ] **Stretch:** community cheatsheet sync command
 
 ## Milestone 2 — Personal dashboard / start page ⬜
