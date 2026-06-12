@@ -1,4 +1,5 @@
 # rsync — fast file sync & transfer
+<!-- tags: networking, files, backup -->
 
 ## Basic sync
 ```

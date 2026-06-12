@@ -1,4 +1,5 @@
 # curl — transfer data with URLs
+<!-- tags: networking, http, api -->
 
 ## GET requests
 ```

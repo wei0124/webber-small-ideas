@@ -1,4 +1,5 @@
 # find — search for files and directories
+<!-- tags: files, search -->
 
 ## By name
 ```

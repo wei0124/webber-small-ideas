@@ -1,4 +1,5 @@
 # jq — command-line JSON processor
+<!-- tags: text-processing, json -->
 
 ## Extract fields
 ```

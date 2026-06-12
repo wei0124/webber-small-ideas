@@ -262,6 +262,92 @@ def test_main_sync_end_to_end(monkeypatch, tmp_path, capsys):
     assert "2 added" in captured.out
 
 
+def test_parse_tags_single_line():
+    md = "# title\n<!-- tags: devops, networking -->\n## section\n"
+    assert cheat.parse_tags(md) == ["devops", "networking"]
+
+
+def test_parse_tags_no_tags():
+    md = "# title\n## section\nno tags here\n"
+    assert cheat.parse_tags(md) == []
+
+
+def test_parse_tags_multiple_lines():
+    md = "<!-- tags: a, b -->\nsome text\n<!-- tags: c -->\n"
+    assert cheat.parse_tags(md) == ["a", "b", "c"]
+
+
+def test_parse_tags_strips_whitespace():
+    md = "<!-- tags:  foo , bar ,  baz  -->\n"
+    assert cheat.parse_tags(md) == ["foo", "bar", "baz"]
+
+
+def test_parse_tags_empty_inner():
+    md = "<!-- tags: -->\n"
+    assert cheat.parse_tags(md) == []
+
+
+def test_all_tags_returns_dict():
+    tags = cheat.all_tags()
+    assert isinstance(tags, dict)
+    assert len(tags) > 0
+
+
+def test_all_tags_known_tag():
+    tags = cheat.all_tags()
+    assert "text-processing" in tags
+    assert "grep" in tags["text-processing"]
+    assert "sed" in tags["text-processing"]
+
+
+def test_all_tags_devops():
+    tags = cheat.all_tags()
+    assert "devops" in tags
+    assert "docker" in tags["devops"]
+    assert "kubectl" in tags["devops"]
+
+
+def test_main_tags_list_all(capsys):
+    rc = cheat.main(["--tags"])
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert "text-processing" in captured.out
+    assert "devops" in captured.out
+
+
+def test_main_tags_filter_specific(capsys):
+    rc = cheat.main(["--tags", "git"])
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert "git-rebase" in captured.out
+
+
+def test_main_tags_filter_nonexistent(capsys):
+    rc = cheat.main(["--tags", "nonexistent-tag-xyz"])
+    captured = capsys.readouterr()
+    assert rc == 1
+    assert "No cheatsheets tagged" in captured.err
+
+
+def test_main_tags_counts_format(capsys):
+    rc = cheat.main(["--tags"])
+    captured = capsys.readouterr()
+    assert rc == 0
+    lines = captured.out.strip().split("\n")
+    for line in lines:
+        assert "(" in line and ")" in line
+
+
+def test_tags_present_in_new_cheatsheets():
+    tags = cheat.all_tags()
+    assert "orchestration" in tags
+    assert "kubectl" in tags["orchestration"]
+    assert "build" in tags
+    assert "make" in tags["build"]
+    assert "terminal" in tags
+    assert "tmux" in tags["terminal"]
+
+
 if __name__ == "__main__":
     # Allow running without pytest installed: minimal manual runner.
     import shutil

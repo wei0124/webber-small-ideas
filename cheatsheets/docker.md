@@ -1,4 +1,5 @@
 # docker — container basics
+<!-- tags: containers, devops, networking -->
 
 ## Containers
 ```

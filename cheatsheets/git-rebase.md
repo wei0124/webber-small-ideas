@@ -1,4 +1,5 @@
 # git rebase — replay commits onto a new base
+<!-- tags: git, version-control -->
 
 ## Basic rebase
 ```

@@ -1,4 +1,5 @@
 # sed — stream editor for text transforms
+<!-- tags: text-processing, scripting -->
 
 ## Substitute (find & replace)
 ```

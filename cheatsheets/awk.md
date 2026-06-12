@@ -1,4 +1,5 @@
 # awk — field processing & reporting
+<!-- tags: text-processing, scripting -->
 
 ## Print columns
 ```

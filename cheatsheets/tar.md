@@ -1,4 +1,5 @@
 # tar — archive & compress files
+<!-- tags: files, compression -->
 
 ## Create archives
 ```

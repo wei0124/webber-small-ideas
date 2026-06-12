@@ -1,4 +1,5 @@
 # systemctl — manage systemd services
+<!-- tags: devops, system, services -->
 
 ## Service lifecycle
 ```

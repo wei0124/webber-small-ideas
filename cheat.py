@@ -7,6 +7,8 @@ Usage:
     cheat --list           List every available cheatsheet.
     cheat --search <term>  Find cheatsheets whose name or body mentions <term>.
     cheat --completion bash  Print a bash completion script (also: zsh).
+    cheat --tags             List all tags and their counts.
+    cheat --tags <tag>       List sheets that have a specific tag.
     cheat --sync [URL]     Pull the latest community cheatsheets from GitHub.
 
 Cheatsheets are plain Markdown files in the `cheatsheets/` folder next to this
@@ -95,6 +97,28 @@ def search(term: str) -> list[str]:
             if term in fh.read().lower():
                 hits.append(name)
     return hits
+
+
+def parse_tags(markdown: str) -> list[str]:
+    """Parse tags from ``<!-- tags: foo, bar -->`` lines in `markdown`."""
+    tags: list[str] = []
+    for line in markdown.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("<!-- tags:") and stripped.endswith("-->"):
+            inner = stripped[len("<!-- tags:"):-len("-->")].strip()
+            if inner:
+                tags.extend(t.strip() for t in inner.split(",") if t.strip())
+    return tags
+
+
+def all_tags() -> dict[str, list[str]]:
+    """Return ``{tag: [sheet_names]}`` for every cheatsheet that declares tags."""
+    result: dict[str, list[str]] = {}
+    for name in available():
+        with open(_path_for(name), encoding="utf-8") as fh:
+            for tag in parse_tags(fh.read()):
+                result.setdefault(tag, []).append(name)
+    return result
 
 
 _CLIPBOARD_TOOLS: list[tuple[str, list[str]]] = [
@@ -274,6 +298,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="copy command lines to clipboard instead of displaying")
     parser.add_argument("--list", action="store_true", help="list all cheatsheets")
     parser.add_argument("--search", metavar="TERM", help="search cheatsheets")
+    parser.add_argument("--tags", nargs="?", const=True, metavar="TAG",
+                        help="list all tags (or filter by a specific tag)")
     parser.add_argument("--completion", choices=["bash", "zsh"],
                         help="print a shell completion script (bash or zsh)")
     parser.add_argument("--sync", nargs="?", const=DEFAULT_SYNC_URL, metavar="URL",
@@ -298,6 +324,22 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  + {name}")
         for name in result["updated"]:
             print(f"  ~ {name}")
+        return 0
+
+    if args.tags is not None:
+        tags = all_tags()
+        if not tags:
+            print("No tags found.", file=sys.stderr)
+            return 1
+        if args.tags is True:
+            for tag in sorted(tags):
+                print(f"{tag} ({len(tags[tag])})")
+        else:
+            sheets = tags.get(args.tags, [])
+            if not sheets:
+                print(f"No cheatsheets tagged {args.tags!r}.", file=sys.stderr)
+                return 1
+            print("\n".join(sheets))
         return 0
 
     if args.list:

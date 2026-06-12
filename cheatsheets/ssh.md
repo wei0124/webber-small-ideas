@@ -1,4 +1,5 @@
 # ssh — secure shell & tunnels
+<!-- tags: networking, security, devops -->
 
 ## Connect
 ```

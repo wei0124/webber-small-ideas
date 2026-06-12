@@ -1,4 +1,5 @@
 # grep — search text with patterns
+<!-- tags: text-processing, search -->
 
 ## Basic search
 ```
