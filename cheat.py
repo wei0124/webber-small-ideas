@@ -6,6 +6,7 @@ Usage:
     cheat -c <command>     Copy command lines from a cheatsheet to the clipboard.
     cheat --list           List every available cheatsheet.
     cheat --search <term>  Find cheatsheets whose name or body mentions <term>.
+    cheat --raw <command>  Print the raw Markdown of a cheatsheet (no highlighting).
     cheat --completion bash  Print a bash completion script (also: zsh).
     cheat --tags             List all tags and their counts.
     cheat --tags <tag>       List sheets that have a specific tag.
@@ -296,6 +297,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("command", nargs="?", help="command to look up")
     parser.add_argument("-c", "--copy", action="store_true",
                         help="copy command lines to clipboard instead of displaying")
+    parser.add_argument("--raw", action="store_true",
+                        help="print the raw Markdown of a cheatsheet without highlighting")
     parser.add_argument("--list", action="store_true", help="list all cheatsheets")
     parser.add_argument("--search", metavar="TERM", help="search cheatsheets")
     parser.add_argument("--tags", nargs="?", const=True, metavar="TAG",
@@ -361,6 +364,17 @@ def main(argv: list[str] | None = None) -> int:
     if not args.command:
         parser.print_help()
         return 1
+
+    if args.raw:
+        try:
+            print(_raw_markdown(args.command), end="")
+        except KeyError as exc:
+            name, suggestions = exc.args
+            print(f"No cheatsheet for {name!r}.", file=sys.stderr)
+            if suggestions:
+                print(f"Did you mean: {', '.join(suggestions)}?", file=sys.stderr)
+            return 1
+        return 0
 
     if args.copy:
         try:

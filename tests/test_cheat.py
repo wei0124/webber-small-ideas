@@ -348,6 +348,21 @@ def test_tags_present_in_new_cheatsheets():
     assert "tmux" in tags["terminal"]
 
 
+def test_main_raw_prints_unformatted_markdown(capsys):
+    rc = cheat.main(["--raw", "tar"])
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert "```" in captured.out
+    assert "#" in captured.out
+
+
+def test_main_raw_unknown_command_returns_one(capsys):
+    rc = cheat.main(["--raw", "definitely-not-a-command"])
+    captured = capsys.readouterr()
+    assert rc == 1
+    assert "No cheatsheet" in captured.err
+
+
 if __name__ == "__main__":
     # Allow running without pytest installed: minimal manual runner.
     import shutil
