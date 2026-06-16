@@ -28,6 +28,7 @@ python3 cheat.py git-rebase       # show the git rebase cheatsheet
 python3 cheat.py --list           # list every available cheatsheet
 python3 cheat.py --search tunnel  # find cheatsheets mentioning "tunnel"
 python3 cheat.py -c tar           # copy tar commands to the clipboard
+python3 cheat.py --raw tar        # print raw Markdown (pipe-friendly)
 python3 cheat.py --completion bash  # print bash completion script
 python3 cheat.py --sync           # pull latest community cheatsheets
 ```
