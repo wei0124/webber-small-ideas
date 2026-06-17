@@ -28,14 +28,19 @@ The first tool. Done means:
 - [x] **Stretch:** shell completion (`cheat --completion bash|zsh`)
 - [x] **Stretch:** community cheatsheet sync command (`cheat --sync`)
 
-## Milestone 2 — Personal dashboard / start page ⬜
+## Milestone 2 — `dashboard`: personal start page 🚧 (MVP complete)
 
-A single self-hosted page: bookmarks, weather, to-dos, a couple of API widgets.
+A single self-hosted page: bookmarks, to-dos, notes — driven by a TOML config.
 
-- [ ] Static page + small backend for the widgets
-- [ ] Config-driven layout (no code changes to rearrange)
-- [ ] Tests for the widget data layer
+- [x] Single-file `dashboard.py`, stdlib only (Python 3.11+ for `tomllib`)
+- [x] `--render` prints HTML to stdout (no server); default mode starts HTTP server
+- [x] Config-driven layout: declaration order = page order (no code to rearrange)
+- [x] Three widget types: `bookmarks`, `todos`, `notes`
+- [x] `html.escape` on all user input; clear error messages on bad config
+- [x] Test suite: `tests/test_dashboard.py` (31 tests, runs with or without pytest)
+- [ ] **Stretch:** multi-column / grid layout
 - [ ] **Stretch:** pluggable widget API so others can add their own
+- [ ] **Stretch:** JS / network widgets (clock, weather)
 
 ## Milestone 3 — Pick the next from `IDEAS.md` ⬜
 

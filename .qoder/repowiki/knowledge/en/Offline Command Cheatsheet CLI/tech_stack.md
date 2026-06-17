@@ -1,0 +1,1 @@
+Pure Python 3.8+ standard library (no external packages); uses `urllib.request` for GitHub API integration and `shutil.which` for cross-platform clipboard tool detection (pbcopy, wl-copy, xclip, etc.).

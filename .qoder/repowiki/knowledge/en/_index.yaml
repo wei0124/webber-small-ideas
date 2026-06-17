@@ -1,0 +1,40 @@
+# 知识卡导出索引文件
+schema_version: 1
+locale: en-US
+branch: main
+exported_at: "2026-06-17T02:53:43Z"
+modules:
+    "":
+        dir_name: Offline Command Cheatsheet CLI
+        title: Offline Command Cheatsheet CLI
+        scope:
+            - cheat.py
+            - tests/
+            - cheatsheets/
+            - docs/
+            - .gitignore
+            - IDEAS.md
+            - README.md
+            - ROADMAP.md
+            - LICENSE
+            - cheatsheets\awk.md
+            - cheatsheets\curl.md
+            - cheatsheets\docker.md
+            - cheatsheets\find.md
+            - cheatsheets\git-rebase.md
+            - cheatsheets\grep.md
+            - cheatsheets\jq.md
+            - cheatsheets\kubectl.md
+            - cheatsheets\make.md
+            - cheatsheets\rsync.md
+            - cheatsheets\sed.md
+            - cheatsheets\ssh.md
+            - cheatsheets\systemctl.md
+            - cheatsheets\tar.md
+            - cheatsheets\tmux.md
+            - docs\specs\2026-06-16-dashboard-design.md
+            - tests\test_cheat.py
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []

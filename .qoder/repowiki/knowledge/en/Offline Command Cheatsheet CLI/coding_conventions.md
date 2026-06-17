@@ -1,0 +1,3 @@
+- Cheatsheets use HTML comment metadata `<!-- tags: tag1, tag2 -->` for categorization and filtering.
+- Executable commands are strictly enclosed in Markdown fenced code blocks (```) for extraction and clipboard operations.
+- Error handling for missing cheatsheets uses `KeyError` with a tuple payload `(name, suggestions)` to propagate fuzzy-match results to the UI layer.

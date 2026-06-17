@@ -1,0 +1,33 @@
+schema_version: 1
+module_path: ""
+title: Offline Command Cheatsheet CLI
+scope:
+    - cheat.py
+    - tests/
+    - cheatsheets/
+    - docs/
+    - .gitignore
+    - IDEAS.md
+    - README.md
+    - ROADMAP.md
+    - LICENSE
+    - cheatsheets\awk.md
+    - cheatsheets\curl.md
+    - cheatsheets\docker.md
+    - cheatsheets\find.md
+    - cheatsheets\git-rebase.md
+    - cheatsheets\grep.md
+    - cheatsheets\jq.md
+    - cheatsheets\kubectl.md
+    - cheatsheets\make.md
+    - cheatsheets\rsync.md
+    - cheatsheets\sed.md
+    - cheatsheets\ssh.md
+    - cheatsheets\systemctl.md
+    - cheatsheets\tar.md
+    - cheatsheets\tmux.md
+    - docs\specs\2026-06-16-dashboard-design.md
+    - tests\test_cheat.py
+source_files: []
+depends_on: []
+related_to: []

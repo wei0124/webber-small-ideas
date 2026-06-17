@@ -1,0 +1,49 @@
+# ─────────────────────────────────────────────────────────────
+# dashboard.toml — example config for dashboard.py
+# ─────────────────────────────────────────────────────────────
+# Widget declaration order = top-to-bottom page order.
+# Supported widget types: bookmarks, todos, notes.
+
+[page]
+title = "Webber's Dashboard"
+
+# ── Bookmarks ─────────────────────────────────────────────────────────────────
+
+[[widget]]
+type = "bookmarks"
+title = "Dev"
+links = [
+    { name = "GitHub",       url = "https://github.com" },
+    { name = "MDN Web Docs", url = "https://developer.mozilla.org" },
+    { name = "Hacker News",  url = "https://news.ycombinator.com" },
+    { name = "Python Docs",  url = "https://docs.python.org/3" },
+]
+
+[[widget]]
+type = "bookmarks"
+title = "Tools"
+links = [
+    { name = "Synology DSM", url = "http://synology.local:5000" },
+    { name = "Portainer",    url = "http://localhost:9443" },
+]
+
+# ── Todos ─────────────────────────────────────────────────────────────────────
+
+[[widget]]
+type = "todos"
+title = "Today"
+items = [
+    { text = "Ship dashboard MVP",       done = false },
+    { text = "Review open PRs",          done = false },
+    { text = "Write cheatsheet for jq",  done = true  },
+]
+
+# ── Notes ─────────────────────────────────────────────────────────────────────
+
+[[widget]]
+type = "notes"
+title = "Scratch"
+body = """\
+Quick notes and reminders.
+Edit this file and refresh the page to update.
+"""

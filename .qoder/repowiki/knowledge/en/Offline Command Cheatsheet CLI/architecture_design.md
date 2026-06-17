@@ -1,0 +1,4 @@
+- Single-file architecture (`cheat.py`) acting as the sole entry point, bundling argument parsing, business logic, and UI rendering.
+- Filesystem-backed content store: cheatsheets are plain Markdown files in a sibling `cheatsheets/` directory, discovered dynamically via `os.listdir`.
+- Separation of concerns via internal helper functions: `render()` handles display formatting, `search()` handles full-text indexing, `sync()` manages remote updates via GitHub API, and `copy_to_clipboard()` abstracts OS-specific clipboard tools.
+- Dependency injection pattern in `sync()` allows replacing the network fetcher for offline testing.

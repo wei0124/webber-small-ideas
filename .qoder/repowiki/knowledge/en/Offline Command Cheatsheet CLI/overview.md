@@ -1,0 +1,1 @@
+A zero-dependency Python CLI that renders, searches, and syncs Markdown-based command cheatsheets for offline developer reference.
