@@ -51,6 +51,13 @@ def validate(config: dict) -> list[dict]:
     Raises ValueError with a human-readable message pointing at the offending
     widget and field.
     """
+    page = config.get("page", {})
+    columns = page.get("columns", 1)
+    if not isinstance(columns, int) or columns < 1:
+        raise ValueError("'page.columns' must be a positive integer (default: 1).")
+    if columns > 6:
+        raise ValueError("'page.columns' must be at most 6.")
+
     widgets = config.get("widget", [])
     if not isinstance(widgets, list):
         raise ValueError("'widget' must be a TOML array ([[widget]]).")
@@ -63,6 +70,17 @@ def validate(config: dict) -> list[dict]:
             raise ValueError(
                 f"Widget #{idx} has unknown type {wtype!r}. "
                 f"Known types: {', '.join(sorted(_KNOWN_TYPES))}."
+            )
+
+        span = w.get("span", 1)
+        if not isinstance(span, int) or span < 1:
+            raise ValueError(
+                f"Widget #{idx} ({wtype}): 'span' must be a positive integer."
+            )
+        if span > columns:
+            raise ValueError(
+                f"Widget #{idx} ({wtype}): 'span' ({span}) exceeds "
+                f"page columns ({columns})."
             )
 
         if wtype == "bookmarks":
@@ -100,6 +118,14 @@ def _esc(text: str) -> str:
     return html.escape(str(text), quote=True)
 
 
+def _widget_style(widget: dict) -> str:
+    """Return an inline style attribute for grid span, or empty string."""
+    span = widget.get("span", 1)
+    if span > 1:
+        return f' style="grid-column: span {span}"'
+    return ""
+
+
 def render_bookmarks(widget: dict) -> str:
     """Render a bookmarks widget to an HTML fragment."""
     title = _esc(widget.get("title", "Bookmarks"))
@@ -110,7 +136,7 @@ def render_bookmarks(widget: dict) -> str:
         items.append(f'        <li><a href="{url}">{name}</a></li>')
     body = "\n".join(items)
     return (
-        f'    <section class="widget widget-bookmarks">\n'
+        f'    <section class="widget widget-bookmarks"{_widget_style(widget)}>\n'
         f"      <h2>{title}</h2>\n"
         f"      <ul>\n{body}\n      </ul>\n"
         f"    </section>"
@@ -129,7 +155,7 @@ def render_todos(widget: dict) -> str:
         )
     body = "\n".join(items)
     return (
-        f'    <section class="widget widget-todos">\n'
+        f'    <section class="widget widget-todos"{_widget_style(widget)}>\n'
         f"      <h2>{title}</h2>\n"
         f"      <ul>\n{body}\n      </ul>\n"
         f"    </section>"
@@ -141,7 +167,7 @@ def render_notes(widget: dict) -> str:
     title = _esc(widget.get("title", "Notes"))
     body = _esc(widget["body"]).replace("\n", "<br>")
     return (
-        f'    <section class="widget widget-notes">\n'
+        f'    <section class="widget widget-notes"{_widget_style(widget)}>\n'
         f"      <h2>{title}</h2>\n"
         f"      <p>{body}</p>\n"
         f"    </section>"
@@ -154,13 +180,8 @@ _RENDERERS = {
     "notes": render_notes,
 }
 
-_CSS = """\
+_CSS_BASE = """\
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #f5f5f5; color: #222; padding: 2rem;
-      max-width: 640px; margin: 0 auto;
-    }
     h1 { margin-bottom: 1.5rem; font-size: 1.6rem; }
     .widget { background: #fff; border-radius: 8px; padding: 1.2rem;
               margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
@@ -173,9 +194,32 @@ _CSS = """\
 """
 
 
+def _grid_css(columns: int) -> str:
+    """Return CSS for the page body/grid container based on column count."""
+    if columns <= 1:
+        return (
+            "    body {\n"
+            "      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;\n"
+            "      background: #f5f5f5; color: #222; padding: 2rem;\n"
+            "      max-width: 640px; margin: 0 auto;\n"
+            "    }\n"
+        )
+    return (
+        "    body {\n"
+        "      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;\n"
+        "      background: #f5f5f5; color: #222; padding: 2rem;\n"
+        f"      max-width: 1200px; margin: 0 auto;\n"
+        f"      display: grid; grid-template-columns: repeat({columns}, 1fr);\n"
+        "      gap: 1rem;\n"
+        "    }\n"
+    )
+
+
 def render_page(config: dict) -> str:
     """Render the full HTML page from a validated config dict."""
-    page_title = _esc(config.get("page", {}).get("title", "Dashboard"))
+    page = config.get("page", {})
+    page_title = _esc(page.get("title", "Dashboard"))
+    columns = page.get("columns", 1)
     widgets = validate(config)
 
     fragments = []
@@ -184,6 +228,7 @@ def render_page(config: dict) -> str:
         fragments.append(renderer(w))
 
     body = "\n".join(fragments)
+    css = _CSS_BASE + _grid_css(columns)
     return (
         "<!DOCTYPE html>\n"
         '<html lang="en">\n'
@@ -191,7 +236,7 @@ def render_page(config: dict) -> str:
         '  <meta charset="utf-8">\n'
         f"  <title>{page_title}</title>\n"
         "  <style>\n"
-        f"{_CSS}"
+        f"{css}"
         "  </style>\n"
         "</head>\n"
         "<body>\n"

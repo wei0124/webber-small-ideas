@@ -98,11 +98,65 @@ cheat --sync https://api.github.com/repos/you/your-fork/contents/cheatsheets
 
 ---
 
+## Shipping now: `dashboard` — self-hosted personal start page
+
+A single-file, self-hosted personal start page. Reads a TOML config and renders
+a clean, read-only HTML page with bookmarks, to-dos, and notes. Zero dependencies
+— pure Python standard library, requires **Python 3.11+** (for `tomllib`).
+
+### Usage
+
+```
+python3 dashboard.py                     # start server on port 8765
+python3 dashboard.py --config my.toml    # use a specific config file
+python3 dashboard.py --port 9000         # bind a specific port
+python3 dashboard.py --render            # print HTML to stdout (no server)
+```
+
+### Config format
+
+```toml
+[page]
+title = "My Dashboard"
+columns = 2          # grid columns (default: 1, max: 6)
+
+[[widget]]
+type = "bookmarks"
+title = "Dev"
+span = 2             # span both columns
+links = [
+    { name = "GitHub", url = "https://github.com" },
+]
+
+[[widget]]
+type = "todos"
+title = "Today"
+items = [
+    { text = "Ship MVP", done = false },
+]
+
+[[widget]]
+type = "notes"
+title = "Scratch"
+body = "Quick notes."
+```
+
+Three widget types: `bookmarks`, `todos`, `notes`. Declaration order in the TOML
+file determines top-to-bottom page order. Use `columns` to set a multi-column grid
+layout and `span` to make individual widgets occupy multiple columns.
+
+### Requirements
+
+Python 3.11+ (for `tomllib` in the standard library). No `pip install` needed.
+
+---
+
 ## Development
 
 ```
-python3 -m pytest          # run the test suite (24 tests)
-python3 tests/test_cheat.py # or run without pytest installed
+python3 -m pytest                    # run all tests (83 tests)
+python3 tests/test_cheat.py          # cheat tests without pytest
+python3 tests/test_dashboard.py      # dashboard tests without pytest
 ```
 
 ## License

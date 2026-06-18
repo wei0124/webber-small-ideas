@@ -346,6 +346,131 @@ def test_example_toml_render_does_not_crash():
     assert "Webber" in out and "Dashboard" in out
 
 
+# ── Grid layout: columns validation ────────────────────────────────────────
+
+
+def test_validate_columns_default_when_missing():
+    config = {"page": {"title": "No cols"}, "widget": []}
+    widgets = dashboard.validate(config)
+    assert widgets == []
+
+
+def test_validate_columns_positive_integer():
+    config = {"page": {"columns": 2}, "widget": [
+        {"type": "notes", "title": "N", "body": "hi"}
+    ]}
+    widgets = dashboard.validate(config)
+    assert len(widgets) == 1
+
+
+def test_validate_columns_zero_raises():
+    config = {"page": {"columns": 0}, "widget": []}
+    try:
+        dashboard.validate(config)
+    except ValueError as exc:
+        assert "columns" in str(exc).lower()
+    else:
+        raise AssertionError("expected ValueError for columns=0")
+
+
+def test_validate_columns_negative_raises():
+    config = {"page": {"columns": -1}, "widget": []}
+    try:
+        dashboard.validate(config)
+    except ValueError as exc:
+        assert "columns" in str(exc).lower()
+    else:
+        raise AssertionError("expected ValueError for columns=-1")
+
+
+def test_validate_columns_too_large_raises():
+    config = {"page": {"columns": 7}, "widget": []}
+    try:
+        dashboard.validate(config)
+    except ValueError as exc:
+        assert "at most 6" in str(exc).lower() or "columns" in str(exc).lower()
+    else:
+        raise AssertionError("expected ValueError for columns=7")
+
+
+# ── Grid layout: span validation ──────────────────────────────────────────
+
+
+def test_validate_span_default_when_missing():
+    config = {"page": {"columns": 2}, "widget": [
+        {"type": "notes", "title": "N", "body": "hi"}
+    ]}
+    widgets = dashboard.validate(config)
+    assert len(widgets) == 1
+
+
+def test_validate_span_valid():
+    config = {"page": {"columns": 2}, "widget": [
+        {"type": "notes", "title": "N", "body": "hi", "span": 2}
+    ]}
+    widgets = dashboard.validate(config)
+    assert widgets[0]["span"] == 2
+
+
+def test_validate_span_exceeds_columns_raises():
+    config = {"page": {"columns": 2}, "widget": [
+        {"type": "notes", "title": "N", "body": "hi", "span": 3}
+    ]}
+    try:
+        dashboard.validate(config)
+    except ValueError as exc:
+        assert "exceeds" in str(exc).lower()
+    else:
+        raise AssertionError("expected ValueError for span > columns")
+
+
+# ── Grid layout: rendering ─────────────────────────────────────────────────
+
+
+def test_render_page_single_column_no_grid_css():
+    config = {"page": {"title": "Single"}, "widget": [
+        {"type": "notes", "title": "N", "body": "hi"}
+    ]}
+    out = dashboard.render_page(config)
+    assert "max-width: 640px" in out
+    assert "grid-template-columns" not in out
+
+
+def test_render_page_two_columns_has_grid_css():
+    config = {"page": {"title": "Grid", "columns": 2}, "widget": [
+        {"type": "notes", "title": "N", "body": "hi"}
+    ]}
+    out = dashboard.render_page(config)
+    assert "grid-template-columns: repeat(2, 1fr)" in out
+    assert "max-width: 1200px" in out
+
+
+def test_render_page_span_emits_inline_style():
+    config = {"page": {"title": "Span", "columns": 2}, "widget": [
+        {"type": "notes", "title": "N", "body": "hi", "span": 2}
+    ]}
+    out = dashboard.render_page(config)
+    assert 'style="grid-column: span 2"' in out
+
+
+def test_render_page_no_span_no_inline_style():
+    config = {"page": {"title": "NoSpan", "columns": 2}, "widget": [
+        {"type": "notes", "title": "N", "body": "hi"}
+    ]}
+    out = dashboard.render_page(config)
+    assert "grid-column" not in out
+
+
+def test_render_page_backward_compat(tmp_path):
+    """Existing _VALID_TOML (no columns, no span) renders without grid CSS."""
+    path = _write_toml(tmp_path)
+    config = dashboard.load_config(path)
+    out = dashboard.render_page(config)
+    assert "max-width: 640px" in out
+    assert "grid-template-columns" not in out
+    assert "grid-column" not in out
+
+
 # ── Standalone runner (no pytest required) ───────────────────────────────────
 
 if __name__ == "__main__":

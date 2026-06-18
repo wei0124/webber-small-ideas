@@ -28,7 +28,7 @@ The first tool. Done means:
 - [x] **Stretch:** shell completion (`cheat --completion bash|zsh`)
 - [x] **Stretch:** community cheatsheet sync command (`cheat --sync`)
 
-## Milestone 2 — `dashboard`: personal start page 🚧 (MVP complete)
+## Milestone 2 — `dashboard`: personal start page ✅ (MVP + primary stretch goal complete)
 
 A single self-hosted page: bookmarks, to-dos, notes — driven by a TOML config.
 
@@ -37,8 +37,8 @@ A single self-hosted page: bookmarks, to-dos, notes — driven by a TOML config.
 - [x] Config-driven layout: declaration order = page order (no code to rearrange)
 - [x] Three widget types: `bookmarks`, `todos`, `notes`
 - [x] `html.escape` on all user input; clear error messages on bad config
-- [x] Test suite: `tests/test_dashboard.py` (31 tests, runs with or without pytest)
-- [ ] **Stretch:** multi-column / grid layout
+- [x] Test suite: `tests/test_dashboard.py` (44 tests, runs with or without pytest)
+- [x] **Stretch:** multi-column / grid layout (`columns` + `span` in config)
 - [ ] **Stretch:** pluggable widget API so others can add their own
 - [ ] **Stretch:** JS / network widgets (clock, weather)
 
